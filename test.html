@@ -12,10 +12,15 @@
     <input type='radio' name='radio' id='cb1' checked>
     <div id='div1' class='togglefrog' data-toggler='cb1'>
       Hello World
+      <input id='beep' type='radio' name='x' data-checked='true'>
+      <input id='foo' type='radio' name='x'>
+      <input id='texty' class='togglefrog' data-toggler='foo'>
     </div>
-    <input type='radio' name='radio'>
+    <input type='radio' name='radio' id='cb2'>
     <div id='div2' class='togglefrog' data-toggler='!cb1'>
       Hello World
+      <input id='wrong1' type='radio' name='x' data-checked='true'>
+      <input id='wrong2' type='radio' name='x'>
     </div>
   </body>
 </html>

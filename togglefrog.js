@@ -15,7 +15,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     rbang = /^!/
   , rtrim = /^\s*(\S*)\s*$/
   , pageOptions = {}
+  , WAS_CHECKED = 'togglefrog-was-checked'
+  , MARKER = 'togglefrog-' + new Date().getTime()
+  , MARKER_SELECTOR = '.' + MARKER
   ;
+
+  function isUndef(v) {
+    return typeof v === 'undefined';
+  }
 
   // Fix option tags without "id" values
   function createOptionIds() {
@@ -32,6 +39,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     });
   }
 
+  function booleanData(key, whenUnset) {
+    var value = this.data(key);
+    return isUndef(value) ? whenUnset : value;
+  }
+
+  function findMine(selector) {
+    var me = this[0];
+    return this.find(selector).filter(function() {
+      var $this = $(this), closest = $this.hasClass(MARKER) ? this : $this.closest(MARKER_SELECTOR)[0];
+      return closest === me;
+    });
+  }
+
   // Main toggle setup routine. This plugin operates on selected
   // elements to be controlled by their toggles.
   function togglefrog(invocationOptions) {
@@ -42,6 +62,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
       , toggledId = toggled.id
       , isSimple = $toggled.is('input, select, textarea')
       ;
+
+      $toggled.addClass(MARKER);
 
       var options = $.extend({
         // The toggler expression. In the simplest (and common) case, this
@@ -71,7 +93,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         // then all input, textarea, and select elements contained within it
         // are disabled.
         //
-      , toggleDisable: $toggled.data('toggleDisable') || true
+      , toggleDisable: $toggled.togglefrog_booleanData('toggleDisable', true)
         //
         // Function called when the toggled element is switched "off" by
         // the toggler.
@@ -143,16 +165,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         var on = isOn();
 
         if (isSimple) {
-          toggled.disabled = options.toggleDisabled && !on;
+          toggled.disabled = options.toggleDisable && !on;
         }
         else {
           //
           // Disable inputs contained in the toggled element,
           // if the options indicate we should
           //
-          if (options.toggleDisabled) {
+          if (options.toggleDisable) {
             $toggled
-              .find('input, select, textarea')
+              [on ? 'togglefrog_findMine' : 'find']('input, select, textarea')
               .attr('disabled', !on)
             ;
           }
@@ -169,26 +191,38 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             // Defer until after the smoke clears from this event
             setTimeout(function() {
               $toggled
-                .find('input:radio').each( function() {
-                    this.checked = $(this).data('toggle-was-checked');
+                .togglefrog_findMine('input:radio').each( function() {
+                  var
+                    inp = this
+                  , $inp = $(inp)
+                  , checked = $inp.togglefrog_booleanData(WAS_CHECKED, !!$inp.togglefrog_booleanData('checked', !!$inp.attr('checked')))
+                  ;
+                  this.checked = checked;
                 });
             }, 1);
           }
           else {
             $toggled
               .find('input:radio').each( function() {
-                  $(this).data('toggle-was-checked', this.checked);
+                var
+                  inp = this
+                , $inp = $(inp)
+                , checked = isUndef($inp.data(WAS_CHECKED)) ? $inp.togglefrog_booleanData('checked', inp.checked) : inp.checked
+                ;
+                $inp.data(WAS_CHECKED, checked);
+                inp.checked = false;
               });
           }
 
-          //
-          // If there are togglers *inside* a toggle section
-          // that's toggled back to "on", we need to get them
-          // to re-jigger themselves
-          //
-          $toggled
-            .find(options.togglerClass)
-            .triggerHandler('togglefrog');
+          setTimeout(function() {
+            //
+            // If there are togglers *inside* a toggle section
+            // that's toggled, we need to get them to re-jigger
+            // themselves
+            $toggled
+              [on ? 'togglefrog_findMine' : 'find']('.' + options.togglerClass)
+              .triggerHandler('togglefrog');
+          }, 1);
         }
 
         //
@@ -255,6 +289,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
   $.fn.togglefrog = togglefrog;
   
+  $.fn.togglefrog_fixOptions = createOptionIds;
+  $.fn.togglefrog_booleanData = booleanData;
+  $.fn.togglefrog_findMine = findMine;
+
   $.togglefrog = function(options) { pageOptions = options; };
 
 })(jQuery, window);
