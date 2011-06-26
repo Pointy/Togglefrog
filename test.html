@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
+    <script src='togglefrog.js'></script>
+    <style>
+      body { background-color: white; }
+      .untoggled { color: rgba(0, 0, 0, 0.20); }
+    </style>
+  </head>
+  <body class='togglefrog'>
+    <input type='radio' name='radio' id='cb1' checked>
+    <div id='div1' class='togglefrog' data-toggler='cb1'>
+      Hello World
+    </div>
+    <input type='radio' name='radio'>
+    <div id='div2' class='togglefrog' data-toggler='!cb1'>
+      Hello World
+    </div>
+  </body>
+</html>
