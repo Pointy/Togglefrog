@@ -3,9 +3,24 @@
   <head>
     <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
     <script src='togglefrog.js'></script>
+    <script>
+      $.togglefrog({
+        whenToggled: function() {
+          if ($(this).hasClass('fader'))
+            $(this).show(250);
+        },
+        whenUntoggled: function() {
+          if ($(this).hasClass('fader'))
+            $(this).hide(250);
+        }
+      });
+    </script>
     <style>
       body { background-color: white; }
       .untoggled { color: rgba(0, 0, 0, 0.20); }
+      .smushy { background-color: red; }
+
+      .fader { position: absolute; display: none; }
     </style>
   </head>
   <body class='togglefrog'>
@@ -17,10 +32,30 @@
       <input id='texty' class='togglefrog' data-toggler='foo'>
     </div>
     <input type='radio' name='radio' id='cb2'>
-    <div id='div2' class='togglefrog' data-toggler='!cb1'>
+    <div id='div2' class='togglefrog' data-toggler='cb2'>
       Hello World
       <input id='wrong1' type='radio' name='x' data-checked='true'>
       <input id='wrong2' type='radio' name='x'>
+      <span id='span' class='togglefrog' data-toggler='weirdo' data-toggledclass='smushy'>
+        <input id='lt1'>
+        <input id='lt2'>
+      </span>
+    </div>
+    <input type='checkbox' id='weirdo' checked>
+
+    <select id='sel1'>
+      <option id='opt1' value='1'>Option 1</option>
+      <option id='opt2' value='2'>Option 2</option>
+      <option id='opt3' value='3'>Option 3</option>
+    </select>
+    <div class='fader togglefrog' id='fade1' data-toggler='opt1,weirdo' data-untoggledClass='hidden'>
+      This is a test
+    </div>
+    <div class='fader togglefrog' id='fade2' data-toggler='opt2,weirdo' data-untoggledClass='hidden'>
+      of the emergency broadcast system.
+    </div>
+    <div class='fader togglefrog' id='fade3' data-toggler='opt3,weirdo' data-untoggledClass='hidden'>
+      Please do not be afraid.
     </div>
   </body>
 </html>

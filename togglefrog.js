@@ -15,9 +15,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     rbang = /^!/
   , rtrim = /^\s*(\S*)\s*$/
   , pageOptions = {}
-  , WAS_CHECKED = 'togglefrog-was-checked'
+  , CHECKED = 'checked'
+  , WAS_CHECKED = 'togglefrog-waschecked'
   , MARKER = 'togglefrog-' + new Date().getTime()
   , MARKER_SELECTOR = '.' + MARKER
+  , TOGGLE_STATUS = 'togglefrog-status'
+  , TOGGLERS = 'togglefrog-togglers'
+  , OPTIONS = 'togglefrog-options'
   ;
 
   function isUndef(v) {
@@ -44,13 +48,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     return isUndef(value) ? whenUnset : value;
   }
 
-  function findMine(selector) {
-    var me = this[0];
-    return this.find(selector).filter(function() {
-      var $this = $(this), closest = $this.hasClass(MARKER) ? this : $this.closest(MARKER_SELECTOR)[0];
-      return closest === me;
-    });
+  //
+  // return true if the element is untoggled ("off")
+  // or if any parent is untoggled
+  function isUntoggled() {
+    var
+      $element = $(this[0]) 
+    , $parents = $element.parents().andSelf()
+    , status = null
+    ;
+    for (var i = 0; i < $parents.length; ++i) {
+      if ($($parents[i]).data(TOGGLE_STATUS) === false) return true;
+    }
+    return false;
   }
+
+  function noData(key) { return typeof this.data(key) === 'undefined'; }
 
   // Main toggle setup routine. This plugin operates on selected
   // elements to be controlled by their toggles.
@@ -64,6 +77,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
       ;
 
       $toggled.addClass(MARKER);
+
 
       var options = $.extend({
         // The toggler expression. In the simplest (and common) case, this
@@ -86,8 +100,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         // When the toggled element is "on", the "toggledClass" classes are
         // added, and the "untoggledClass" classes are removed.
         //
-      , toggledClass: $toggled.data('toggledClass') || 'toggled'
-      , untoggledClass: $toggled.data('untoggledClass') || 'untoggled'
+      , toggledClass: $toggled.data('toggledclass') || 'toggled'
+      , untoggledClass: $toggled.data('untoggledclass') || 'untoggled'
         //
         // If "toggleDisable" is true, then when the toggled element is "off"
         // then all input, textarea, and select elements contained within it
@@ -109,6 +123,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         //
       , togglerClass: 'toggler'
       }, pageOptions, invocationOptions);
+
+      $toggled.data(OPTIONS, options);
 
       var
         // The "terms" of the toggler list - these are "or'ed" together
@@ -156,16 +172,38 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         return false;
       }
 
+      //////////////////////////////////////////////////////////////////////////////
       //
       // The event handler that'll be attached to all the
       // toggler control elements. If "justMe" is true,
       // then 
       //
       function toggleHandler(ev) {
-        var on = isOn();
-
+        var
+          toggler = this
+        , $toggler = $(toggler)
+        , on = isOn()
+        , reallyOn = null
+        , deferred = []
+        , isRadio = this.type.toLowerCase() === 'radio'
+        ;
+        
+        $toggled.data(TOGGLE_STATUS, on);
+        reallyOn = on && !$toggled.togglefrog_isUntoggled()
+        ;
+        //
+        // Set/unset classes
+        //
+        $toggled.find(MARKER_SELECTOR).andSelf().each(function() {
+          var $this = $(this), reallyOn = on && !$this.togglefrog_isUntoggled();
+          $this
+            [reallyOn ? 'addClass' : 'removeClass']($(this).data(OPTIONS).toggledClass)
+            [reallyOn ? 'removeClass' : 'addClass']($(this).data(OPTIONS).untoggledClass)
+          ;
+        });
+        
         if (isSimple) {
-          toggled.disabled = options.toggleDisable && !on;
+          toggled.disabled = options.toggleDisable && !reallyOn;
         }
         else {
           //
@@ -173,77 +211,106 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
           // if the options indicate we should
           //
           if (options.toggleDisable) {
-            $toggled
-              [on ? 'togglefrog_findMine' : 'find']('input, select, textarea')
-              .attr('disabled', !on)
-            ;
+            $toggled.find('input, select, textarea').each(function() {
+              var
+                $this = $(this)
+              , on = reallyOn && !$this.togglefrog_isUntoggled()
+              ;
+              this.disabled = !on;
+              if (this.type.toLowerCase() === 'radio') {
+                // Radio buttons require special handling.
+                // We have to make sure that we're done switching
+                // buttons off before we switch any back on,
+                // because they affect each other.
+                if (on) {
+                  deferred.push($.proxy(function() {
+                    this.checked = $this.data(WAS_CHECKED);
+                  }, this));
+                }
+                else {
+                  $this.data(WAS_CHECKED, !!this.checked);
+                  this.checked = false;
+                }
+              }
+            });
           }
-
           //
-          // Radio buttons that are toggled "off" may share "name"
-          // attributes with radio buttons in other places! Oh
-          // no!  Thus we need to make sure that when we toggle
-          // them off, we save their "checked" status so that
-          // when they toggle back into the active state we can
-          // restore the state they were in previously.
-          //
-          if (on) {
-            // Defer until after the smoke clears from this event
-            setTimeout(function() {
-              $toggled
-                .togglefrog_findMine('input:radio').each( function() {
-                  var
-                    inp = this
-                  , $inp = $(inp)
-                  , checked = $inp.togglefrog_booleanData(WAS_CHECKED, !!$inp.togglefrog_booleanData('checked', !!$inp.attr('checked')))
-                  ;
-                  this.checked = checked;
-                });
-            }, 1);
-          }
-          else {
-            $toggled
-              .find('input:radio').each( function() {
-                var
-                  inp = this
-                , $inp = $(inp)
-                , checked = isUndef($inp.data(WAS_CHECKED)) ? $inp.togglefrog_booleanData('checked', inp.checked) : inp.checked
-                ;
-                $inp.data(WAS_CHECKED, checked);
-                inp.checked = false;
-              });
-          }
-
-          setTimeout(function() {
-            //
-            // If there are togglers *inside* a toggle section
-            // that's toggled, we need to get them to re-jigger
-            // themselves
-            $toggled
-              [on ? 'togglefrog_findMine' : 'find']('.' + options.togglerClass)
-              .triggerHandler('togglefrog');
-          }, 1);
+          // If there are togglers or toggled sections *inside*
+          // a toggle section that's toggled, we need to get them
+          // to re-jigger themselves.  This has to be deferred
+          // because the reset of radio buttons after a switch
+          // "on" is itself deferred.
+          $toggled
+            .find('.' + options.togglerClass).each(function() {
+              deferred.push($.proxy(function() {
+                $(this).triggerHandler('togglefrog');
+              }, this));
+            })
+            .find(MARKER_SELECTOR).each(function() {
+              deferred.push($.proxy(function() {
+                $(this).data(TOGGLERS).triggerHandler('togglefrog');
+              }, this));
+            })
+          ;
         }
 
-        //
-        // Set/unset classes
-        //
-        $toggled
-          [on ? 'addClass' : 'removeClass'](options.toggledClass)
-          [on ? 'removeClass' : 'addClass'](options.untoggledClass)
-        ;
-        
         //
         // Call callbacks
         //
         var callback = options[on ? 'whenToggled' : 'whenUntoggled'];
-        if (callback) callback.call(this, on, options);
+        if (callback) callback.call(toggled, on, options);
+
+        //
+        // Arrange for deferred processing
+        if (deferred.length)
+          setTimeout(function() {
+            for (var d = 0; d < deferred.length; ++d)
+              deferred[d]();
+          }, 1);
+
+        if (on) {
+          // Set up a timeout to run after the other deferred
+          // functions to check on the state of radio buttons.
+          // If there are any groups of radio buttons for
+          // which no toggled ("on") buttons are checked, then
+          // we need to check any that have "data-checked" set
+          setTimeout(function() {
+            var
+              radios = $toggled.find('input:radio').filter(function() {
+                return !$(this).togglefrog_isUntoggled();
+              }).get()
+            , groups = (function() {
+                var rv = { names: [], buttons: {} };
+                for (var i = 0; i < radios.length; ++i) {
+                  var list = rv.buttons[radios[i].name];
+                  if (!list) {
+                    list = rv.buttons[radios[i].name] = [];
+                    rv.names.push(radios[i].name);
+                  }
+                  list.push(radios[i]);
+                }
+                return rv;
+              })()
+            ;
+            for (var i = 0; i < groups.names.length; ++i) {
+              var checked = false, buttons = groups.buttons[groups.names[i]];
+              for (var j = 0; j < buttons.length; ++j)
+                checked = checked || buttons[j].checked;
+              if (!checked) {
+                for (var j = 0; j < buttons.length; ++j) {
+                  buttons[j].checked = $(buttons[j]).data(CHECKED);
+                }
+              }
+            }
+          }, 5);
+        }
       };
 
       //
       // Iterate through the term objects setting up event
       // handlers etc.
       //
+      var togglerElements = [];
       $.each(togglerTerms, function(_, term) {
         //
         // Bind the handler to the togglers.
@@ -253,7 +320,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             throw 'Togglefrog cannot find toggler "' + toggler.id + '"!';
 
           var
-            isOption = toggler.element.tagName.toUpperCase === 'OPTION'
+            isOption = toggler.element.tagName.toUpperCase() === 'OPTION'
           , $toggler = $(toggler.element)
           , eventsToBind = 
               isOption ?
@@ -261,14 +328,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 (toggledId ? ('click.' + toggledId + ' togglefrog.' + toggledId) : 'click togglefrog')
           , unbindIfNecessary = toggledId ? function() { $(this).unbind(eventsToBind); } : function() {}
           , $eventTargets =
-              isOption ? $toggler.closes('select') :
+              isOption ? $toggler.closest('select') :
               $toggler.is('input:radio') ? $('input:radio[name=' + toggler.element.name + ']') :
               $toggler.is('input:checkbox') ? $toggler :
               null
           ;
 
+          togglerElements.push(toggler.element);
+
           if (!$eventTargets)
-            throw 'Togglefrog toggler element "' + toggler.id + '" is not a select, radio button, or checkbox!';
+            throw 'Togglefrog toggler element "' + toggler.id + '" is not an option, radio button, or checkbox!';
 
           $eventTargets
             .addClass(options.togglerClass)
@@ -277,6 +346,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             .triggerHandler('togglefrog');
         });
       });
+
+      $toggled.data(TOGGLERS, $().add(togglerElements));
     });
   }
 
@@ -291,7 +362,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
   
   $.fn.togglefrog_fixOptions = createOptionIds;
   $.fn.togglefrog_booleanData = booleanData;
-  $.fn.togglefrog_findMine = findMine;
+  $.fn.togglefrog_isUntoggled = isUntoggled;
+  $.fn.togglefrog_noData = noData;
 
   $.togglefrog = function(options) { pageOptions = options; };
 
