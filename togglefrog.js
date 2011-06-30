@@ -183,6 +183,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
           toggler = this
         , $toggler = $(toggler)
         , on = isOn()
+        , prevStatus = !!$toggled.data(TOGGLE_STATUS)
         , reallyOn = null
         , deferred = []
         , isRadio = this.type.toLowerCase() === 'radio'
@@ -224,10 +225,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
                 // because they affect each other.
                 if (on) {
                   deferred.push($.proxy(function() {
-                    this.checked = $this.data(WAS_CHECKED);
+                     this.checked = $this.data(WAS_CHECKED);
                   }, this));
                 }
-                else {
+                else if (prevStatus) {
                   $this.data(WAS_CHECKED, !!this.checked);
                   this.checked = false;
                 }

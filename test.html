@@ -21,6 +21,10 @@
       .smushy { background-color: red; }
 
       .fader { position: absolute; display: none; }
+
+      .menu { position: absolute; display: none; }
+      .menu.toggled { display: block; }
+
     </style>
   </head>
   <body class='togglefrog'>
@@ -60,5 +64,45 @@
     <div class='fader togglefrog' id='fade3' data-toggler='opt3,weirdo;freako' data-untoggledClass='hidden'>
       Please do not be afraid.
     </div>
+<div style='padding: 50px 0px 10px 5px'>
+  <input type='radio' name='diet' id='vegan' value='vegan'>Vegan
+  <input type='radio' name='diet' id='veggie' value='veggie'>Vegetarian
+  <input type='radio' name='diet' id='omni' value='omni'>Omnivore
+</div>
+
+<div class='togglefrog menu' data-toggler='vegan'>
+  <input type='radio' name='meal' value='sprouts'>
+  Sprout salad with chickpea chips<br>
+  <input type='radio' name='meal' value='tofu'>
+  Toasted pressed tofu with soy-garlic gravy with 
+  sweet/sour green beans<br>
+  <input type='radio' name='meal' value='beanburger'>
+  Black bean burger on spelt-quinoa bun with homemade 
+  ketchup and sweet potato fries
+</div>
+
+<div class='togglefrog menu' data-toggler='veggie'>
+  <input type='radio' name='meal' value='grill'>
+  Grilled cheddar with tomato on spelt-quinoa bread 
+  with sweet potato fries<br>
+  <input type='radio' name='meal' value='taco'>
+  Seitan and pepper stir-fry and aged Monterrey Jack 
+  in whole-wheat tortillas with tomato-parsley salad<br>
+  <input type='radio' name='meal' value='soup'>
+  Creamy broccoli cheddar soup with pumpkin seed crackers
+</div>
+
+<div class='togglefrog menu' data-toggler='omni'>
+  <input type='radio' name='meal' value='meatburger'>
+  Angus beef burger on spelt-quinoa bun with homemade 
+  ketchup and sweet potato fries<br>
+  <input type='radio' name='meal' value='salmon'>
+  Alaskan salmon steak with chipotle glaze and aromatic 
+  brown rice<br>
+  <input type='radio' name='meal' value='chicken'>
+  Chardonnay-poached chicken breast with buttered peas 
+  and aromatic brown rice
+</div>
+
   </body>
 </html>
