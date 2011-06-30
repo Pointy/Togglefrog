@@ -258,7 +258,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
         // Call callbacks
         //
         var callback = options[on ? 'whenToggled' : 'whenUntoggled'];
-        if (callback) callback.call(toggled, on, options);
+        if (callback) callback.call(toggled, reallyOn, options);
 
         //
         // Arrange for deferred processing

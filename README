@@ -15,3 +15,61 @@ By "under the control", I mean that the style and interaction properties of
 some section of the page change based on whether some other control (a radio
 button, checkbox, or select) is active (checked or selected).
 
+Using togglefrog, elements involved are considered to be either "togglers" or
+"toggled".  The "toggler" elements are those that control the "toggled"
+elements.  When setting up toggling, it's the "toggled" elements that are
+selected with jQuery, and the "togglers" are determined by options.
+
+Togglefrog can be used like any other jQuery plugin:
+
+    $(selector).togglefrog(options);
+
+That puts each matched page element under control of one or more radio buttons,
+checkboxes, or select elements, according to the given options. Certain of the
+options, including the most important ones, are by default taken from "data-"
+attributes on the affected elements. Here are the available options:
+
+  toggler: identifies the toggler element(s) for the toggled element. The
+    value of "toggler" is in the simplest case a single "id" string. Such a 
+    setup is quite common: a portion of the page is toggled by a single
+    control (radio button, checkbox, or option).  The toggler value can
+    also be a list of "id" values, separated by commas.  Such a list means
+    that the toggled element should be considered toggled (that is, "on",
+    conceptually) if *all* the referenced toggler elements are checked or
+    selected.  Finally, the toggler value can be a list of such lists,
+    separated by semicolons. Such a list of lists means that the toggled
+    element is considered to be toggled when *any* of the sublists are
+    all checked or selected.  In other words, "," is like "and" and ";"
+    is like "or".  In all cases, an "id" value preceded by an exclamation
+    point reverses the sense of that toggler element's "checked" or
+    "selected" value, allowing a toggled element to be "on" when its
+    controlling toggler is "off".  The attribute "data-toggler" on the
+    toggled element can provide this option value.
+
+  toggledClass: a space-separated list of class names to be added to the
+    toggled element when it's toggled "on" and removed when "off". By
+    default, the class name "toggled" is added/removed.
+
+  untoggledClass: a space-separated list of class names to be added to
+    the toggled element when it's toggled "off" and removed when "on".
+    By default, the class name "untoggled" is added/removed.
+
+  toggleDisable: a "true" or "false" value indicating whether, when
+    the toggled element is "off", all input, select, and textarea elements
+    within it are marked as "disabled". It's common to want inputs 
+    dsabled when a form section is toggled "off" because they're thus
+    irrelevant, but the behavior is optional.
+
+  whenToggled: a function to be called whenever the toggled element is
+    toggled "on". The function is called with the toggled element as the
+    context (the value of "this"). The function is passed a boolean flag
+    indicating whether the element is *fully* toggled "on", which is true
+    when the element and all toggled parents (if any) are "on".
+
+  whenUntoggled: a function to be called whenever the toggled element is
+    untoggled ("off").
+
+  togglerClass: class name to add to toggler elements. The default class
+    is "toggler".
+
+
