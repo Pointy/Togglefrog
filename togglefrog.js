@@ -356,7 +356,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
   // If the body has class 'togglefrog', look for elements
   // on the page with that class and do our thing.
   $(function() {
-    $('body.togglefrog').find('.togglefrog').togglefrog();
+    $('body.togglefrog')
+      .find('.togglefrog').togglefrog().end()
+      .on('new-content', function() {
+        $(this).find('.togglefrog').not(MARKER_SELECTOR).togglefrog();
+      })
+    ;
   });
 
   $.fn.togglefrog = togglefrog;
